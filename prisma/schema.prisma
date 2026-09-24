@@ -1,0 +1,588 @@
+// STYLEAI — Prisma schema
+// PostgreSQL. Run `npm run db:push` (dev) or `npm run db:migrate` for migrations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Auth (Auth.js / NextAuth compatible)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  profile          Profile?
+  photos           Photo[]
+  styleProfile     StyleProfile?
+  stylePreference  StylePreference?
+  colorPreferences ColorRecommendation[]
+  tryOnSessions    TryOnSession[]
+  savedOutfits     SavedOutfit[]
+  favorites        Favorite[]
+  aiGenerations    AIGeneration[]
+  recommendations  Recommendation[]
+  subscription     Subscription?
+  usageCounters    UsageCounter[]
+  analyticsEvents  AnalyticsEvent[]
+  blogPosts        BlogPost[]
+  auditLogs        AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Profile & photos
+// ---------------------------------------------------------------------------
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  heightCm        Int?
+  country         String?
+  phone           String?
+  marketingOptIn  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PhotoStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  DELETED
+}
+
+model Photo {
+  id            String      @id @default(cuid())
+  userId        String
+  storageKey    String
+  url           String
+  width         Int?
+  height        Int?
+  status        PhotoStatus @default(PENDING)
+  isPrimary     Boolean     @default(false)
+  rejectReason  String?
+  consentGiven  Boolean     @default(false)
+  autoDeleteAt  DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  styleProfiles StyleProfile[]
+  tryOnSessions TryOnSession[]
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Style profile (AI-estimated) & preferences (user-editable)
+// ---------------------------------------------------------------------------
+
+enum Undertone {
+  WARM
+  COOL
+  NEUTRAL
+}
+
+model StyleProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  sourcePhotoId     String?
+  bodyShape         String?
+  shoulderRatio     Float?
+  torsoRatio        Float?
+  legRatio          Float?
+  heightCategory    String?
+  skinTone          String?
+  undertone         Undertone?
+  hairColor         String?
+  beardPresence     Boolean?
+  dominantColors    String[]
+  fitRecommendation String?
+  confidence        Float?    @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourcePhoto Photo? @relation(fields: [sourcePhotoId], references: [id])
+}
+
+model StylePreference {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  fashionProfiles  String[] // casual, smart_casual, business, streetwear, luxury, minimal, party, date_night, travel, summer, winter
+  favoriteOccasions String[]
+  budgetMax        Int?
+  preferredBrands  String[]
+  avoidColors      String[]
+  notes            String?
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Colors
+// ---------------------------------------------------------------------------
+
+enum ColorCategory {
+  BEST
+  CAREFUL
+  NEUTRAL
+  ACCENT
+}
+
+model Color {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  hex       String
+  family    String
+  undertone Undertone
+  isNeutral Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  recommendations ColorRecommendation[]
+  clothingItems   ClothingItem[]
+}
+
+model ColorRecommendation {
+  id        String        @id @default(cuid())
+  userId    String
+  colorId   String
+  category  ColorCategory
+  reason    String?
+  createdAt DateTime      @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  color Color @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, colorId, category])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog: brands, categories, clothing items
+// ---------------------------------------------------------------------------
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  logoUrl   String?
+  website   String?
+  createdAt DateTime @default(now())
+
+  clothingItems ClothingItem[]
+  products      Product[]
+}
+
+enum CategoryGroup {
+  TOP
+  BOTTOM
+  FOOTWEAR
+  ACCESSORY
+}
+
+model Category {
+  id       String        @id @default(cuid())
+  name     String
+  slug     String        @unique
+  group    CategoryGroup
+  parentId String?
+
+  parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryToParent")
+
+  clothingItems ClothingItem[]
+  products      Product[]
+}
+
+enum Fit {
+  SLIM
+  STRAIGHT
+  RELAXED
+  TAPERED
+  REGULAR
+  OVERSIZED
+}
+
+model ClothingItem {
+  id          String   @id @default(cuid())
+  name        String
+  categoryId  String
+  brandId     String?
+  colorId     String?
+  fit         Fit?
+  gender      String?  @default("unisex")
+  imageUrl    String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category    Category      @relation(fields: [categoryId], references: [id])
+  brand       Brand?        @relation(fields: [brandId], references: [id])
+  color       Color?        @relation(fields: [colorId], references: [id])
+  outfitItems OutfitItem[]
+
+  @@index([categoryId])
+}
+
+// ---------------------------------------------------------------------------
+// Outfits
+// ---------------------------------------------------------------------------
+
+enum OutfitSlot {
+  TOP
+  BOTTOM
+  FOOTWEAR
+  ACCESSORY
+}
+
+enum OutfitSource {
+  SYSTEM
+  ADMIN
+  AI
+}
+
+model Outfit {
+  id         String       @id @default(cuid())
+  name       String
+  occasion   String?
+  weather    String?
+  styleTag   String?
+  source     OutfitSource @default(AI)
+  isPublished Boolean     @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  items         OutfitItem[]
+  savedByUsers  SavedOutfit[]
+  tryOnSessions TryOnSession[]
+
+  @@index([occasion])
+}
+
+model OutfitItem {
+  id             String     @id @default(cuid())
+  outfitId       String
+  clothingItemId String
+  slot           OutfitSlot
+
+  outfit       Outfit       @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  clothingItem ClothingItem @relation(fields: [clothingItemId], references: [id])
+
+  @@index([outfitId])
+}
+
+model SavedOutfit {
+  id        String   @id @default(cuid())
+  userId    String
+  outfitId  String
+  note      String?
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outfit Outfit @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, outfitId])
+}
+
+// ---------------------------------------------------------------------------
+// AI generation job system
+// ---------------------------------------------------------------------------
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model TryOnSession {
+  id             String    @id @default(cuid())
+  userId         String
+  photoId        String
+  outfitId       String?
+  selectedItems  Json?
+  status         JobStatus @default(QUEUED)
+  provider       String?
+  resultImageUrl String?
+  errorMessage   String?
+  retryCount     Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo  Photo   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  outfit Outfit? @relation(fields: [outfitId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum AIGenerationType {
+  IMAGE_ANALYSIS
+  VIRTUAL_TRY_ON
+  IMAGE_GENERATION
+  STYLE_RECOMMENDATION
+  TEXT_GENERATION
+}
+
+model AIGeneration {
+  id           String            @id @default(cuid())
+  userId       String
+  type         AIGenerationType
+  provider     String
+  status       JobStatus         @default(QUEUED)
+  input        Json?
+  output       Json?
+  errorMessage String?
+  latencyMs    Int?
+  createdAt    DateTime          @default(now())
+  completedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+enum RecommendationType {
+  OUTFIT
+  COLOR
+  JEANS
+  TOP
+  STYLE_PROFILE
+}
+
+model Recommendation {
+  id        String              @id @default(cuid())
+  userId    String
+  type      RecommendationType
+  payload   Json
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Shopping
+// ---------------------------------------------------------------------------
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  brandId       String?
+  categoryId    String
+  colorName     String?
+  price         Int?
+  currency      String   @default("AED")
+  sizeOptions   String[]
+  imageUrl      String?
+  affiliateUrl  String?
+  source        String?
+  rating        Float?
+  inStock       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  brand    Brand?   @relation(fields: [brandId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+}
+
+enum FavoriteTargetType {
+  COLOR
+  PRODUCT
+  CLOTHING_ITEM
+  OUTFIT
+}
+
+model Favorite {
+  id         String             @id @default(cuid())
+  userId     String
+  targetType FavoriteTargetType
+  targetId   String
+  createdAt  DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+}
+
+// ---------------------------------------------------------------------------
+// Subscriptions / monetization
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+model Subscription {
+  id                   String              @id @default(cuid())
+  userId               String              @unique
+  plan                 SubscriptionPlan    @default(FREE)
+  status               SubscriptionStatus  @default(ACTIVE)
+  currentPeriodEnd     DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageCounter {
+  id               String   @id @default(cuid())
+  userId           String
+  periodKey        String // e.g. "2026-09"
+  generationsUsed  Int      @default(0)
+  generationsLimit Int      @default(5)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodKey])
+}
+
+// ---------------------------------------------------------------------------
+// Admin configuration
+// ---------------------------------------------------------------------------
+
+model AdminSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+model StyleRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  conditions  Json
+  actions     Json
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model BlogPost {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?
+  content         String
+  coverImage      String?
+  tags            String[]
+  status          BlogStatus @default(DRAFT)
+  seoTitle        String?
+  seoDescription  String?
+  authorId        String?
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  author User? @relation(fields: [authorId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  targetType String?
+  targetId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  event     String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([event])
+  @@index([createdAt])
+}
