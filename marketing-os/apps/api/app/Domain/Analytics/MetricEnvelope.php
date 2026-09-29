@@ -32,6 +32,7 @@ final readonly class MetricEnvelope
         public ?string $reason = null,
         public ?array $action = null,
         public array $expectedSources = [],
+        public ?string $currency = null,
     ) {
         if ($value !== null && ! in_array($status, [DataStatus::Ok, DataStatus::Stale], true)) {
             throw new \InvalidArgumentException("Metric {$key}: a value is only allowed with status ok/stale.");
@@ -60,6 +61,7 @@ final readonly class MetricEnvelope
             'status' => $this->status->value,
             'value' => $this->value,
             'unit' => $this->unit,
+            'currency' => $this->currency,
             'period' => $this->period,
             'comparison' => $this->comparison,
             'source' => $this->source,

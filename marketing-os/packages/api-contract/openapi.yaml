@@ -1538,6 +1538,9 @@ components:
               type: string
             href:
               type: string
+          required:
+            - label
+            - href
         retry_after:
           type: integer
         feature:
@@ -1961,21 +1964,59 @@ components:
           type: string
           enum:
             - count
+            - percent
             - ratio
             - currency
             - position
+        currency:
+          type:
+            - string
+            - 'null'
+          description: 'ISO 4217 code when unit is currency.'
         period:
           type:
             - object
             - 'null'
+          properties:
+            start:
+              type: string
+            end:
+              type: string
+          required:
+            - start
+            - end
         comparison:
           type:
             - object
             - 'null'
+          properties:
+            basis:
+              type: string
+            value:
+              type:
+                - number
+                - 'null'
+            delta_abs:
+              type:
+                - number
+                - 'null'
+            delta_pct:
+              type:
+                - number
+                - 'null'
         source:
           type:
             - object
             - 'null'
+          properties:
+            provider:
+              type: string
+            account:
+              type:
+                - string
+                - 'null'
+          required:
+            - provider
         expected_sources:
           type: array
           items:
@@ -2007,12 +2048,16 @@ components:
               type: string
             href:
               type: string
+          required:
+            - label
+            - href
       required:
         - key
         - label
         - status
         - value
         - unit
+        - expected_sources
         - calculation
     DashboardOverview:
       type: object
