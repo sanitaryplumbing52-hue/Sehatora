@@ -35,7 +35,7 @@ export function ProjectSettingsForm({ project }: { project: { id: string; name: 
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2" noValidate>
       {problem && <div className="sm:col-span-2"><ProblemAlert problem={problem} /></div>}
       <Field label="Name" error={form.formState.errors.name?.message}>{(a) => <Input {...a} {...form.register('name')} />}</Field>
       <Field label="Industry">{(a) => <Input {...a} {...form.register('industry')} />}</Field>

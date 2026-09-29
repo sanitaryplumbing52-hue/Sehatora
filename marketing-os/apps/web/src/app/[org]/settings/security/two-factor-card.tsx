@@ -52,7 +52,7 @@ export function TwoFactorCard() {
           </div>
         )}
         {user.two_factor_enabled ? (
-          <form onSubmit={off.handleSubmit(onDisable)} className="max-w-sm space-y-3" noValidate>
+          <form method="post" onSubmit={off.handleSubmit(onDisable)} className="max-w-sm space-y-3" noValidate>
             {disable.problem && <ProblemAlert problem={disable.problem} />}
             <Field label="Confirm password to turn off" error={off.formState.errors.password?.message}>
               {(a) => <Input {...a} type="password" autoComplete="current-password" {...off.register('password', { required: 'Enter your password.' })} />}
@@ -60,7 +60,7 @@ export function TwoFactorCard() {
             <Button type="submit" variant="secondary" loading={disable.pending}>Turn off two-factor</Button>
           </form>
         ) : enrolment ? (
-          <form onSubmit={code.handleSubmit(onConfirm)} className="max-w-sm space-y-3" noValidate>
+          <form method="post" onSubmit={code.handleSubmit(onConfirm)} className="max-w-sm space-y-3" noValidate>
             <p className="text-sm text-ink-2">Scan this QR code with your authenticator app, then enter the 6-digit code it shows.</p>
             {/* eslint-disable-next-line @next/next/no-img-element -- server-generated SVG data URL; rendering via <img> keeps it script-inert */}
             <img alt="Two-factor QR code" width={192} height={192} className="rounded border border-line bg-white p-1" src={`data:image/svg+xml;utf8,${encodeURIComponent(enrolment.qr_svg)}`} />
@@ -72,7 +72,7 @@ export function TwoFactorCard() {
             <Button type="submit" loading={confirm.pending}>Confirm and turn on</Button>
           </form>
         ) : (
-          <form onSubmit={pw.handleSubmit(onStart)} className="max-w-sm space-y-3" noValidate>
+          <form method="post" onSubmit={pw.handleSubmit(onStart)} className="max-w-sm space-y-3" noValidate>
             {start.problem && <ProblemAlert problem={start.problem} />}
             <Field label="Confirm password to begin" error={pw.formState.errors.password?.message}>
               {(a) => <Input {...a} type="password" autoComplete="current-password" {...pw.register('password', { required: 'Enter your password.' })} />}

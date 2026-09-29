@@ -32,6 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ValidateCsrfToken::class,
         ], append: ['throttle:api']);
 
+        // Behind the Next.js proxy / a load balancer the client IP arrives in X-Forwarded-For. Trust only what is
+        // configured (comma-separated IPs/CIDRs, or '*' when the network path is fully controlled).
+        if ($trusted = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $trusted === '*' ? '*' : array_map('trim', explode(',', $trusted)));
+        }
+
         $middleware->alias([
             'org' => ResolveOrganization::class,
             'verified.email' => EnsureEmailVerified::class,

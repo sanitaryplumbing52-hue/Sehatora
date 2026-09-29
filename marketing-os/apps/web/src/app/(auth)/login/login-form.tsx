@@ -46,7 +46,7 @@ export function LoginForm() {
 
   if (needsCode) {
     return (
-      <form onSubmit={codeForm.handleSubmit(onCode)} className="space-y-4" noValidate>
+      <form method="post" onSubmit={codeForm.handleSubmit(onCode)} className="space-y-4" noValidate>
         <div>
           <h1 className="text-lg font-semibold">Two-factor authentication</h1>
           <p className="mt-1 text-sm text-ink-2">
@@ -66,7 +66,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div>
         <h1 className="text-lg font-semibold">Sign in</h1>
         {params.get('verified') && <p role="status" className="mt-2 rounded bg-ok-soft px-3 py-2 text-sm text-ok">Email verified. Sign in to continue.</p>}

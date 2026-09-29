@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\V1\Projects\DashboardController;
 use App\Http\Controllers\Api\V1\Projects\ProjectController;
 use App\Http\Controllers\Api\V1\Projects\WebsiteController;
 use App\Http\Controllers\Api\V1\System\HealthController;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,8 +26,11 @@ use Illuminate\Support\Facades\Route;
  * (enforced by tests/Feature/OpenApiParityTest).
  */
 
-Route::get('system/health', [HealthController::class, 'show']);
-Route::get('system/health/details', [HealthController::class, 'details'])->middleware('throttle:10,1');
+// Health endpoints are stateless: no session, cookies or CSRF.
+Route::withoutMiddleware([EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, ValidateCsrfToken::class])->group(function () {
+    Route::get('system/health', [HealthController::class, 'show']);
+    Route::get('system/health/details', [HealthController::class, 'details'])->middleware('throttle:10,1');
+});
 
 // --- Guest auth ---------------------------------------------------------------
 Route::prefix('auth')->group(function () {

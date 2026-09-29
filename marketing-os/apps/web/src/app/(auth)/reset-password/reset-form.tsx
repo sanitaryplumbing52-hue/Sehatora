@@ -51,7 +51,7 @@ export function ResetForm() {
   }
   const e = form.formState.errors;
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <h1 className="text-lg font-semibold">Choose a new password</h1>
       {problem && <ProblemAlert problem={problem} />}
       <Field label="New password" hint="At least 12 characters, with a letter and a number." error={e.password?.message}>

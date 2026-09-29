@@ -1,0 +1,113 @@
+name: Marketing OS CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['marketing-os/**', '.github/workflows/marketing-os-ci.yml']
+  pull_request:
+    paths: ['marketing-os/**', '.github/workflows/marketing-os-ci.yml']
+
+concurrency:
+  group: marketing-os-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DB_HOST: 127.0.0.1
+  DB_PORT: 5432
+  DB_USERNAME: mios
+  DB_PASSWORD: mios
+
+jobs:
+  api:
+    name: API (lint + tests)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: marketing-os/apps/api } }
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: mios, POSTGRES_PASSWORD: mios, POSTGRES_DB: mios_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mios" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, redis, intl, mbstring, sodium', coverage: none }
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('marketing-os/apps/api/composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: composer lint
+      - run: php artisan test
+
+  web:
+    name: Web (lint, types, unit, build)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: marketing-os/apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: marketing-os/apps/web/package-lock.json }
+      - run: npm ci
+      - name: API contract types are up to date
+        run: |
+          npm run api:types
+          git diff --exit-code -- src/lib/api/schema.d.ts
+      - run: npm run lint -- --max-warnings 0
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: End-to-end (Playwright)
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: mios, POSTGRES_PASSWORD: mios, POSTGRES_DB: mios_e2e }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mios" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, redis, intl, mbstring, sodium', coverage: none }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: marketing-os/apps/web/package-lock.json }
+      - run: composer install --no-interaction --prefer-dist
+        working-directory: marketing-os/apps/api
+      - run: cp .env.example .env && php artisan key:generate
+        working-directory: marketing-os/apps/api
+      - run: npm ci
+        working-directory: marketing-os/apps/web
+      - run: npx playwright install --with-deps chromium
+        working-directory: marketing-os/apps/web
+      - run: npm run e2e
+        working-directory: marketing-os/apps/web
+        env: { CI: 'true', E2E_DB_DATABASE: mios_e2e }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: marketing-os/apps/web/playwright-report }
+
+  security:
+    name: Dependency & secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', coverage: none }
+      - run: composer audit --locked
+        working-directory: marketing-os/apps/api
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: marketing-os/apps/web
+      - uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }

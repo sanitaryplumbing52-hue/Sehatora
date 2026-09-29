@@ -32,7 +32,7 @@ export function PasswordCard() {
     <Card>
       <CardHeader title="Password" description="Changing your password signs out all other devices." />
       <CardBody>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-sm space-y-3" noValidate>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="max-w-sm space-y-3" noValidate>
           {problem && <ProblemAlert problem={problem} />}
           <Field label="Current password" error={e.current_password?.message}>{(a) => <Input {...a} type="password" autoComplete="current-password" {...form.register('current_password')} />}</Field>
           <Field label="New password" error={e.password?.message}>{(a) => <Input {...a} type="password" autoComplete="new-password" {...form.register('password')} />}</Field>

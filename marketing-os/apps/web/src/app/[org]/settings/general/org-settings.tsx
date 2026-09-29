@@ -55,7 +55,7 @@ export function OrgSettings() {
       <Card>
         <CardHeader title="Organization" description={`Your role: ${membership.role.name}`} />
         <CardBody>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
             {problem && <ProblemAlert problem={problem} />}
             <Field label="Name" error={e.name?.message}>{(a) => <Input {...a} disabled={!canEdit} {...form.register('name')} />}</Field>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -80,7 +80,7 @@ export function OrgSettings() {
             <p className="mt-1 text-xs text-ink-3">An organization must keep at least one Owner.</p>
           </div>
           {can('org.delete') && (
-            <form onSubmit={del.handleSubmit(onDelete)} className="space-y-3 border-t border-line pt-4">
+            <form method="post" onSubmit={del.handleSubmit(onDelete)} className="space-y-3 border-t border-line pt-4">
               <Field label="Confirm your password to delete this organization" error={del.formState.errors.password?.message}>
                 {(a) => <Input {...a} type="password" autoComplete="current-password" {...del.register('password', { required: 'Enter your password.' })} />}
               </Field>

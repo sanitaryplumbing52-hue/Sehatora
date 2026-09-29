@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ApiError } from '@/lib/api/errors';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -17,5 +17,9 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   );
+  // Marks the document once React has hydrated (used by e2e tests to avoid racing native form submits).
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = 'true';
+  }, []);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

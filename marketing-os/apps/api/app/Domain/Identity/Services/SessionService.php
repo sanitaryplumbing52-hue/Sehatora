@@ -31,6 +31,11 @@ final class SessionService
         return $row !== null && DB::table('sessions')->where('id', $row->id)->delete() > 0;
     }
 
+    public function revokeAll(User $user): void
+    {
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+    }
+
     public function revokeOthers(User $user, string $currentSessionId): void
     {
         DB::table('sessions')->where('user_id', $user->id)->where('id', '!=', $currentSessionId)->delete();

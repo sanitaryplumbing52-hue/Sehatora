@@ -104,7 +104,7 @@ export function MembersPanel() {
         <Card>
           <CardHeader title="Invite someone" description="They receive an email link valid for 7 days and must sign in with that address." />
           <CardBody>
-            <form onSubmit={form.handleSubmit(onInvite)} className="flex flex-col gap-3 sm:flex-row sm:items-start" noValidate>
+            <form method="post" onSubmit={form.handleSubmit(onInvite)} className="flex flex-col gap-3 sm:flex-row sm:items-start" noValidate>
               <Field label="Email" error={form.formState.errors.email?.message} className="flex-1">{(a) => <Input {...a} type="email" {...form.register('email')} />}</Field>
               <Field label="Role" className="sm:w-40">
                 {(a) => (

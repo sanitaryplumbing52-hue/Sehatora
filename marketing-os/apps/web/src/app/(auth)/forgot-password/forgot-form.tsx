@@ -35,7 +35,7 @@ export function ForgotForm() {
     );
   }
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <h1 className="text-lg font-semibold">Reset your password</h1>
       {problem && <ProblemAlert problem={problem} />}
       <Field label="Email" error={form.formState.errors.email?.message}>{(a) => <Input {...a} type="email" autoComplete="email" {...form.register('email')} />}</Field>

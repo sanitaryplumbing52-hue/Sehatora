@@ -51,6 +51,18 @@ class LoginTest extends TestCase
         $this->assertDatabaseHas('login_activities', ['outcome' => 'locked']);
     }
 
+    public function test_distributed_guessing_against_one_account_is_throttled_across_ips(): void
+    {
+        $this->user(['email' => 'a@example.com']);
+        for ($i = 1; $i <= 25; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => "203.0.113.$i"])
+                ->postJson('/api/v1/auth/login', ['email' => 'a@example.com', 'password' => 'wrong-wrong-1234'])->assertStatus(422);
+        }
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.9'])
+            ->postJson('/api/v1/auth/login', ['email' => 'a@example.com', 'password' => 'correct-horse-battery-9'])
+            ->assertStatus(429)->assertJsonPath('code', 'login_locked');
+    }
+
     public function test_logout_invalidates_session(): void
     {
         $user = $this->user();

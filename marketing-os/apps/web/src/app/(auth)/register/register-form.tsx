@@ -33,7 +33,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <h1 className="text-lg font-semibold">Create your account</h1>
       {problem && <ProblemAlert problem={problem} />}
       <Field label="Name" error={e.name?.message}>{(a) => <Input {...a} autoComplete="name" {...form.register('name')} />}</Field>

@@ -8,6 +8,8 @@ const apiOrigin = process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:8000';
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Dev-only: lets Playwright / 127.0.0.1 access dev assets and HMR (ignored in production).
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   turbopack: { root: fileURLToPath(new URL('.', import.meta.url)) },
   async rewrites() {
     return [

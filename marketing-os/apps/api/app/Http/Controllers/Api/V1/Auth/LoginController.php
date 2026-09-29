@@ -22,6 +22,9 @@ class LoginController extends Controller
 {
     private const MAX_ATTEMPTS = 5;
 
+    /** Across all IPs, so a distributed guessing attack on one account is also slowed. */
+    private const MAX_ATTEMPTS_PER_EMAIL = 25;
+
     private const PENDING_TTL_MINUTES = 10;
 
     public function __construct(
@@ -35,11 +38,13 @@ class LoginController extends Controller
         $email = mb_strtolower($request->string('email')->toString());
         $throttleKey = 'login:'.sha1($email.'|'.$request->ip());
 
-        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
+        $emailKey = 'login-email:'.sha1($email);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS) || RateLimiter::tooManyAttempts($emailKey, self::MAX_ATTEMPTS_PER_EMAIL)) {
             $this->activity->record($request, $email, 'locked');
 
             return Problem::response(429, 'login_locked', 'Too many sign-in attempts.',
-                'Try again later.', ['retry_after' => RateLimiter::availableIn($throttleKey)]);
+                'Try again later.', ['retry_after' => max(RateLimiter::availableIn($throttleKey), RateLimiter::availableIn($emailKey))]);
         }
 
         $user = User::where('email', $email)->first();
@@ -47,6 +52,7 @@ class LoginController extends Controller
         $valid = Hash::check($request->string('password')->toString(), $user?->password ?? '$2y$12$'.str_repeat('a', 53));
         if (! $user || ! $valid) {
             RateLimiter::hit($throttleKey, 300);
+            RateLimiter::hit($emailKey, 900);
             $this->activity->record($request, $email, 'failed', $user);
             $this->audit->record('auth.login_failed', null, ['email' => $email], actorEmail: $email);
 

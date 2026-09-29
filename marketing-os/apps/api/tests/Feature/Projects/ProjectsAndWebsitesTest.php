@@ -64,6 +64,9 @@ class ProjectsAndWebsitesTest extends TestCase
         $this->patchJson("$b/projects/$id", ['archived' => true])->assertOk()->assertJsonPath('data.archived', true);
         $this->getJson("$b/projects")->assertJsonCount(0, 'data');
         $this->getJson("$b/projects?archived=1")->assertJsonCount(1, 'data');
+        $this->getJson("$b/projects?archived=true")->assertJsonCount(1, 'data');
+        $this->getJson("$b/projects?archived=false")->assertJsonCount(0, 'data');
+        $this->getJson("$b/projects?archived=maybe")->assertStatus(422);
         $this->patchJson("$b/projects/$id", ['archived' => false])->assertJsonPath('data.archived', false);
         $this->getJson("$b/projects")->assertJsonCount(1, 'data');
     }

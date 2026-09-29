@@ -68,7 +68,7 @@ export function WebsitesCard({ projectId, websites, canManage }: { projectId: st
           </Table>
         )}
         {canManage && (
-          <form onSubmit={form.handleSubmit(onAdd)} className="flex flex-col gap-3 sm:flex-row sm:items-start" noValidate>
+          <form method="post" onSubmit={form.handleSubmit(onAdd)} className="flex flex-col gap-3 sm:flex-row sm:items-start" noValidate>
             <Field label="Add a website" error={form.formState.errors.url?.message} className="flex-1">
               {(a) => <Input {...a} placeholder="example.com" inputMode="url" {...form.register('url')} />}
             </Field>

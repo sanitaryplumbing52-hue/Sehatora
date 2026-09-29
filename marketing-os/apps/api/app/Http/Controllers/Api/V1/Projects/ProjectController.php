@@ -20,11 +20,12 @@ class ProjectController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $filters = $request->validate(['archived' => ['sometimes', 'boolean'], 'per_page' => ['sometimes', 'integer', 'min:1', 'max:100']]);
+        // Query strings carry booleans as text, so accept 'true' / 'false' as well as 1 / 0.
+        $filters = $request->validate(['archived' => ['sometimes', 'in:true,false,1,0'], 'per_page' => ['sometimes', 'integer', 'min:1', 'max:100']]);
 
         return ProjectResource::collection(
             Project::with('websites.domains')
-                ->when(! ($filters['archived'] ?? false), fn ($q) => $q->whereNull('archived_at'))
+                ->when(! $request->boolean('archived'), fn ($q) => $q->whereNull('archived_at'))
                 ->orderBy('name')->paginate($filters['per_page'] ?? 25),
         );
     }

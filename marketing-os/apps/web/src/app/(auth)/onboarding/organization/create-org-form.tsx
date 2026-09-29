@@ -24,7 +24,7 @@ export function CreateOrgForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div>
         <h1 className="text-lg font-semibold">Welcome to Marketing Intelligence OS</h1>
         <p className="mt-1 text-sm text-ink-2">Start by naming your organization — usually your company or agency. You can invite teammates next.</p>
