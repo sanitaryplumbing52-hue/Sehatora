@@ -12,8 +12,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\MembershipResource;
 use App\Http\Resources\UserResource;
+use App\Support\Problem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class ProfileController extends Controller
@@ -57,7 +59,7 @@ class ProfileController extends Controller
     public function revokeSession(Request $request, SessionService $sessions, Audit $audit, string $id): Response|JsonResponse
     {
         if ($id === 'current' || ! $sessions->revoke($request->user(), $id)) {
-            return \App\Support\Problem::response(404, 'not_found', 'Resource not found.');
+            return Problem::response(404, 'not_found', 'Resource not found.');
         }
         $audit->record('me.session_revoked', $request->user());
 
@@ -77,7 +79,7 @@ class ProfileController extends Controller
     }
 
     /** All organizations the user belongs to, with their role and permissions in each. */
-    public function organizations(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function organizations(Request $request): AnonymousResourceCollection
     {
         $memberships = $request->user()->memberships()
             ->whereHas('organization')->with(['organization', 'role.permissions'])->get()
@@ -99,7 +101,7 @@ class ProfileController extends Controller
         $data = $request->validate(['code' => ['required', 'string']]);
         $codes = $twoFactor->confirmEnrolment($request->user(), $data['code']);
         if ($codes === null) {
-            return \App\Support\Problem::response(422, 'invalid_two_factor_code', 'That code is not valid.', null,
+            return Problem::response(422, 'invalid_two_factor_code', 'That code is not valid.', null,
                 ['errors' => ['code' => ['That code is not valid.']]]);
         }
         $audit->record('me.two_factor_enabled', $request->user());

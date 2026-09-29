@@ -2,6 +2,8 @@
 
 namespace Tests;
 
+use App\Domain\Billing\Models\Plan;
+use App\Domain\Billing\Models\Subscription;
 use App\Domain\Identity\Models\User;
 use App\Domain\Tenancy\Models\Organization;
 use App\Domain\Tenancy\Models\OrganizationUser;
@@ -53,8 +55,8 @@ abstract class TestCase extends BaseTestCase
 
     protected function onPlan(Organization $org, string $plan): void
     {
-        \App\Domain\Billing\Models\Subscription::where('organization_id', $org->id)
-            ->update(['plan_id' => \App\Domain\Billing\Models\Plan::where('key', $plan)->value('id')]);
+        Subscription::where('organization_id', $org->id)
+            ->update(['plan_id' => Plan::where('key', $plan)->value('id')]);
     }
 
     protected function base(Organization $org): string

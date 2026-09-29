@@ -3,6 +3,7 @@
 namespace Tests\Feature\Tenancy;
 
 use App\Domain\Billing\Entitlements;
+use App\Domain\Tenancy\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -19,7 +20,7 @@ class OrganizationTest extends TestCase
         $res->assertJsonPath('data.role.key', 'owner')->assertJsonPath('data.organization.slug', 'dubai-heaters-llc');
         $this->assertContains('org.delete', $res->json('data.permissions'));
 
-        $org = \App\Domain\Tenancy\Models\Organization::firstWhere('slug', 'dubai-heaters-llc');
+        $org = Organization::firstWhere('slug', 'dubai-heaters-llc');
         $this->assertSame('free', Entitlements::for($org)->planKey());
         $this->assertSame($user->id, $org->owner_id);
         $this->inOrg($org, fn () => $this->assertDatabaseHas('audit_logs', ['action' => 'org.created', 'organization_id' => $org->id, 'actor_id' => $user->id]));

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Domain\Tenancy\Models\OrganizationUser;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Domain\Tenancy\Models\OrganizationUser */
+/** @mixin OrganizationUser */
 class MemberResource extends JsonResource
 {
     public function toArray(Request $request): array

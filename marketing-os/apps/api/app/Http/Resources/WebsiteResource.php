@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Domain\Projects\Models\Website;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Domain\Projects\Models\Website */
+/** @mixin Website */
 class WebsiteResource extends JsonResource
 {
     public function toArray(Request $request): array

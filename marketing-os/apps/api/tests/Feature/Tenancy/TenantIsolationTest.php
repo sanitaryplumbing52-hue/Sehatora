@@ -4,12 +4,14 @@ namespace Tests\Feature\Tenancy;
 
 use App\Domain\Projects\Models\Project;
 use App\Domain\Tenancy\Models\Invitation;
+use App\Domain\Tenancy\Models\Organization;
 use App\Domain\Tenancy\Models\Role;
 use App\Domain\Tenancy\Services\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -20,7 +22,7 @@ class TenantIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @return array{orgA: \App\Domain\Tenancy\Models\Organization, orgB: \App\Domain\Tenancy\Models\Organization, ids: array<string,string>} */
+    /** @return array{orgA: Organization, orgB: Organization, ids: array<string,string>} */
     private function twoTenants(): array
     {
         $a = $this->org(null, 'Tenant A');
@@ -113,7 +115,7 @@ class TenantIsolationTest extends TestCase
 
         $this->expectException(QueryException::class);
         try {
-            DB::transaction(fn () => DB::table('projects')->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'organization_id' => $a->id, 'name' => 'Injected', 'currency' => 'USD', 'timezone' => 'UTC']));
+            DB::transaction(fn () => DB::table('projects')->insert(['id' => (string) Str::uuid(), 'organization_id' => $a->id, 'name' => 'Injected', 'currency' => 'USD', 'timezone' => 'UTC']));
         } finally {
             app(TenantContext::class)->clear();
         }

@@ -7,6 +7,7 @@ namespace App\Support;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,7 @@ use Throwable;
 /** Maps exceptions on /api/* to problem-details JSON. Internals are never exposed. */
 final class ApiExceptionRenderer
 {
-    public function __invoke(Throwable $e, Request $request): ?\Illuminate\Http\JsonResponse
+    public function __invoke(Throwable $e, Request $request): ?JsonResponse
     {
         if (! $request->is('api/*')) {
             return null;
@@ -37,7 +38,7 @@ final class ApiExceptionRenderer
         };
     }
 
-    public static function fallback(Request $request): ?\Illuminate\Http\JsonResponse
+    public static function fallback(Request $request): ?JsonResponse
     {
         return $request->is('api/*')
             ? Problem::response(500, 'server_error', 'An unexpected error occurred.', 'The problem has been logged. Quote the request ID if you contact support.')

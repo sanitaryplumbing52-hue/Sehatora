@@ -10,9 +10,10 @@ use App\Domain\Tenancy\Services\MemberService;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MemberResource;
 use App\Support\Problem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class MemberController extends Controller
 {
@@ -27,7 +28,7 @@ class MemberController extends Controller
         return MemberResource::collection($rows);
     }
 
-    public function update(Request $request, string $user): MemberResource|\Illuminate\Http\JsonResponse
+    public function update(Request $request, string $user): MemberResource|JsonResponse
     {
         $data = $request->validate(['role' => ['required', 'string', 'exists:roles,key']]);
         $target = $this->target($request, $user);
@@ -39,7 +40,7 @@ class MemberController extends Controller
         return new MemberResource($updated->load('user'));
     }
 
-    public function destroy(Request $request, string $user): Response|\Illuminate\Http\JsonResponse
+    public function destroy(Request $request, string $user): Response|JsonResponse
     {
         $target = $this->target($request, $user);
         if (! $target) {

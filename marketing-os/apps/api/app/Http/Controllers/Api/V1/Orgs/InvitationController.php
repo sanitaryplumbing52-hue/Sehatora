@@ -15,6 +15,7 @@ use App\Support\Problem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class InvitationController extends Controller
 {
@@ -37,7 +38,7 @@ class InvitationController extends Controller
         return (new InvitationResource($invitation->load('role')))->response()->setStatusCode(201);
     }
 
-    public function destroy(Request $request, string $invitation): \Illuminate\Http\Response|JsonResponse
+    public function destroy(Request $request, string $invitation): Response|JsonResponse
     {
         $model = Invitation::where('organization_id', $request->attributes->get('organization')->id)->pending()->find($invitation);
         if (! $model) {

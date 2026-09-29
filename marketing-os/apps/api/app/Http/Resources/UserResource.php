@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Domain\Identity\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Domain\Identity\Models\User */
+/** @mixin User */
 class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
